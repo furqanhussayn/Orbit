@@ -134,16 +134,14 @@ export const CommentsSection = ({ postId, onClose }: CommentsSectionProps) => {
                           <Trash className="w-4 h-4" />
                         </button>
                       )}
-                    </div>
-                  </div>
                 </div>
-
-                  {/* Replies */}
-                  {comment.replies && comment.replies.length > 0 && (
-                    <div className="ml-12 space-y-2 border-l-2 border-border/50 pl-4">
-                      {comment.replies.map((reply) => (
-                        <div key={reply.id} className="flex gap-3">
-                          <img
+              </div>
+              {/* Replies */}
+              {comment.replies && comment.replies.length > 0 && (
+                <div className="ml-12 space-y-2 border-l-2 border-border/50 pl-4">
+                  {comment.replies.map((reply) => (
+                    <div key={reply.id} className="flex gap-3">
+                      <img
                             src={reply.author?.avatar_url || '/avatar.png'}
                             alt={reply.author?.username || 'User'}
                             className="w-8 h-8 rounded-full border-2 border-border/50 object-cover flex-shrink-0"

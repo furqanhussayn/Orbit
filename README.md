@@ -1,5 +1,5 @@
-<<<<<<< HEAD
-# Orbit - Social Media Reimagined
+# Orbit 
+A modern Reddit clon-ish concept social media app built with Next.js, Supabase and Love.
 
 ## Project Overview
 
@@ -75,11 +75,4 @@ This project uses:
 
 MIT
 
-
-
-123456
-haha123
-=======
-# Orbit
-A modern Reddit clon-ish concept social media app built with Next.js, Supabase and Love.
 >>>>>>> f7c39ed2438f6d60d8e00045ee86c6ef0b549ef2
