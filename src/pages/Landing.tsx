@@ -7,10 +7,10 @@ import { CosmicButton } from '@/components/CosmicButton';
 import { GlassCard } from '@/components/GlassCard';
 
 const credits = [
-  { name: 'Student One', roll: '001' },
-  { name: 'Student Two', roll: '002' },
-  { name: 'Student Three', roll: '003' },
-  { name: 'Student Four', roll: '004' },
+  { name: 'Furqan Hussain', roll: '24F-AI-110' },
+  { name: 'Mudassir Kazi', roll: '24F-AI-115' },
+  { name: 'Ashad Abassi', roll: '24F-AI-105' },
+  { name: 'Abeel Ahsan', roll: '24F-AI-155' },
 ];
 
 const Landing = () => {
@@ -99,7 +99,7 @@ const Landing = () => {
       {/* Footer Credits */}
       <footer className="relative z-10 px-6 py-12 lg:px-12 mt-8 border-t border-border/50 bg-card/60 backdrop-blur-md">
         <div className="max-w-4xl mx-auto">
-          <h3 className="text-lg font-semibold mb-4">About Project</h3>
+          <h3 className="text-lg font-semibold mb-4">Project submitted by</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {credits.map((c) => (
               <GlassCard key={c.roll} className="p-4" hover={false}>
