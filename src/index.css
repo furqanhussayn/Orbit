@@ -1,0 +1,194 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Orbit Y2K Cosmic Design System */
+
+@layer base {
+  :root {
+    --background: 260 30% 8%;
+    --foreground: 270 20% 98%;
+
+    --card: 260 25% 12%;
+    --card-foreground: 270 20% 98%;
+
+    --popover: 260 30% 10%;
+    --popover-foreground: 270 20% 98%;
+
+    --primary: 270 100% 70%;
+    --primary-foreground: 260 30% 8%;
+
+    --secondary: 290 80% 60%;
+    --secondary-foreground: 270 20% 98%;
+
+    --muted: 260 20% 20%;
+    --muted-foreground: 270 15% 70%;
+
+    --accent: 200 100% 65%;
+    --accent-foreground: 260 30% 8%;
+
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 85% 97%;
+
+    --border: 270 30% 25%;
+    --input: 270 30% 20%;
+    --ring: 270 100% 70%;
+
+    --radius: 1rem;
+
+    /* Cosmic custom tokens */
+    --cosmic-purple: 270 100% 70%;
+    --cosmic-pink: 320 100% 70%;
+    --cosmic-blue: 220 100% 70%;
+    --cosmic-cyan: 190 100% 65%;
+    --cosmic-violet: 280 90% 65%;
+    
+    --glow-purple: 0 0 40px hsl(270 100% 70% / 0.4);
+    --glow-pink: 0 0 40px hsl(320 100% 70% / 0.4);
+    --glow-blue: 0 0 40px hsl(220 100% 70% / 0.4);
+    
+    --gradient-cosmic: linear-gradient(135deg, hsl(270 100% 70%), hsl(320 100% 70%), hsl(220 100% 70%));
+    --gradient-aurora: linear-gradient(180deg, hsl(270 100% 70% / 0.3), hsl(220 100% 70% / 0.1), transparent);
+    --gradient-glass: linear-gradient(135deg, hsl(270 30% 20% / 0.8), hsl(260 25% 15% / 0.6));
+
+    --sidebar-background: 260 25% 10%;
+    --sidebar-foreground: 270 20% 98%;
+    --sidebar-primary: 270 100% 70%;
+    --sidebar-primary-foreground: 260 30% 8%;
+    --sidebar-accent: 290 80% 60%;
+    --sidebar-accent-foreground: 270 20% 98%;
+    --sidebar-border: 270 30% 25%;
+    --sidebar-ring: 270 100% 70%;
+
+    --chart-1: 270 100% 70%;
+    --chart-2: 290 80% 60%;
+    --chart-3: 220 100% 70%;
+    --chart-4: 320 100% 70%;
+    --chart-5: 190 100% 65%;
+
+    --font-sans: 'Space Grotesk', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  }
+
+  .dark {
+    --background: 260 30% 6%;
+    --foreground: 270 20% 98%;
+
+    --card: 260 25% 10%;
+    --card-foreground: 270 20% 98%;
+
+    --popover: 260 30% 8%;
+    --popover-foreground: 270 20% 98%;
+
+    --primary: 270 100% 70%;
+    --primary-foreground: 260 30% 8%;
+
+    --secondary: 290 80% 60%;
+    --secondary-foreground: 270 20% 98%;
+
+    --muted: 260 20% 18%;
+    --muted-foreground: 270 15% 70%;
+
+    --accent: 200 100% 65%;
+    --accent-foreground: 260 30% 8%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 85% 97%;
+
+    --border: 270 30% 20%;
+    --input: 270 30% 18%;
+    --ring: 270 100% 70%;
+    
+    --sidebar-background: 260 25% 8%;
+    --sidebar-foreground: 270 20% 98%;
+    --sidebar-primary: 270 100% 70%;
+    --sidebar-primary-foreground: 260 30% 8%;
+    --sidebar-accent: 290 80% 60%;
+    --sidebar-accent-foreground: 270 20% 98%;
+    --sidebar-border: 270 30% 20%;
+    --sidebar-ring: 270 100% 70%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-card/60 backdrop-blur-xl border border-border/50;
+  }
+  
+  .glass-strong {
+    @apply bg-card/80 backdrop-blur-2xl border border-border/60;
+  }
+  
+  .glow-primary {
+    box-shadow: var(--glow-purple);
+  }
+  
+  .glow-secondary {
+    box-shadow: var(--glow-pink);
+  }
+  
+  .glow-accent {
+    box-shadow: var(--glow-blue);
+  }
+  
+  .gradient-cosmic {
+    background: var(--gradient-cosmic);
+  }
+  
+  .gradient-cosmic-text {
+    background: var(--gradient-cosmic);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .text-glow {
+    text-shadow: 0 0 20px hsl(var(--primary) / 0.5), 0 0 40px hsl(var(--primary) / 0.3);
+  }
+  
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+  
+  .animate-spin-slow {
+    animation: spin 20s linear infinite;
+  }
+  
+  .animate-twinkle {
+    animation: twinkle 3s ease-in-out infinite;
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { 
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.4), 0 0 40px hsl(var(--primary) / 0.2);
+  }
+  50% { 
+    box-shadow: 0 0 40px hsl(var(--primary) / 0.6), 0 0 80px hsl(var(--primary) / 0.4);
+  }
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
