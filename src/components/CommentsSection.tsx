@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, Heart } from 'lucide-react';
+import { X, Send, Heart, Trash } from 'lucide-react';
 import { CosmicButton } from './CosmicButton';
 import { useComments } from '@/hooks/useComments';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,7 +16,7 @@ interface CommentsSectionProps {
 export const CommentsSection = ({ postId, onClose }: CommentsSectionProps) => {
   const [newComment, setNewComment] = useState('');
   const [mounted, setMounted] = useState(false);
-  const { comments, loading, createComment, likeComment } = useComments(postId);
+  const { comments, loading, createComment, likeComment, deleteComment } = useComments(postId);
   const { profile } = useAuth();
 
   useEffect(() => {
@@ -122,8 +122,21 @@ export const CommentsSection = ({ postId, onClose }: CommentsSectionProps) => {
                         />
                         {comment.likes_count || 0}
                       </button>
+                      {comment.author_id === profile?.id && (
+                        <button
+                          onClick={() => {
+                            const ok = confirm('Delete this comment? This cannot be undone.');
+                            if (!ok) return;
+                            deleteComment(comment.id);
+                          }}
+                          className="ml-2 text-muted-foreground hover:text-destructive transition-colors"
+                        >
+                          <Trash className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </div>
+                </div>
 
                   {/* Replies */}
                   {comment.replies && comment.replies.length > 0 && (
@@ -159,6 +172,18 @@ export const CommentsSection = ({ postId, onClose }: CommentsSectionProps) => {
                               />
                               {reply.likes_count || 0}
                             </button>
+                            {reply.author_id === profile?.id && (
+                              <button
+                                onClick={() => {
+                                  const ok = confirm('Delete this reply? This cannot be undone.');
+                                  if (!ok) return;
+                                  deleteComment(reply.id);
+                                }}
+                                className="ml-2 text-muted-foreground hover:text-destructive transition-colors"
+                              >
+                                <Trash className="w-3 h-3" />
+                              </button>
+                            )}
                           </div>
                         </div>
                       ))}

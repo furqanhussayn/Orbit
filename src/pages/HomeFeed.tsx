@@ -19,7 +19,7 @@ const HomeFeed = () => {
   const navigate = useNavigate();
   
   const feedType = activeTab === 'Trending' ? 'trending' : 'all';
-  const { posts, loading, likePost, savePost, refetch } = usePosts({ feed: feedType as any });
+  const { posts, loading, likePost, savePost, deletePost, refetch } = usePosts({ feed: feedType as any });
 
   const formatTime = (dateString: string) => {
     return formatDistanceToNow(new Date(dateString), { addSuffix: false });
@@ -106,6 +106,7 @@ const HomeFeed = () => {
                 spaceName={post.space?.name}
                 onLike={() => likePost(post.id)}
                 onSave={() => savePost(post.id)}
+                onDelete={() => deletePost(post.id)}
               />
             ))
           )}

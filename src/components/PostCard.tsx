@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Heart, MessageCircle, Bookmark, Hash, Flag, X } from 'lucide-react';
+import { Heart, MessageCircle, Bookmark, Hash, Flag, X, Trash } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { GlassCard } from './GlassCard';
@@ -7,6 +7,7 @@ import { CosmicButton } from './CosmicButton';
 import { CommentsSection } from './CommentsSection';
 import { cn } from '@/lib/utils';
 import { useReports } from '@/hooks/useReports';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface PostCardProps {
   id: string;
@@ -27,6 +28,7 @@ interface PostCardProps {
   onClick?: () => void;
   onLike?: () => void;
   onSave?: () => void;
+  onDelete?: () => void;
 }
 
 export const PostCard = ({
@@ -42,12 +44,15 @@ export const PostCard = ({
   spaceName,
   onClick,
   onLike,
-  onSave
+  onSave,
+  onDelete
 }: PostCardProps) => {
   const [showComments, setShowComments] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const { reportContent } = useReports();
+  const { user } = useAuth();
 
   return (
     <GlassCard 
@@ -143,6 +148,18 @@ export const PostCard = ({
           <span className="text-sm">Report</span>
         </button>
 
+        {author.id && user?.id === author.id && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowDeleteModal(true);
+            }}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-muted-foreground hover:text-destructive transition-colors"
+          >
+            <Trash className="w-5 h-5" />
+          </button>
+        )}
+
         <button 
           onClick={(e) => { e.stopPropagation(); onSave?.(); }}
           className={cn(
@@ -212,6 +229,56 @@ export const PostCard = ({
                 >
                   Submit Report
                 </CosmicButton>
+              </GlassCard>
+            </motion.div>
+          </>
+        )}
+        {showDeleteModal && (
+          <>
+            <motion.div
+              className="fixed inset-0 bg-background/80 backdrop-blur-md z-50"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowDeleteModal(false)}
+            />
+            <motion.div
+              className="fixed inset-0 flex items-center justify-center z-50 p-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <GlassCard
+                className="relative w-full max-w-md p-6"
+                initial={{ scale: 0.95, y: 12 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.95, y: 12 }}
+                transition={{ type: 'spring', duration: 0.4 }}
+                hover={false}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-bold">Delete Post</h2>
+                  <button onClick={() => setShowDeleteModal(false)} className="p-2 hover:bg-muted rounded-lg">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                <p className="text-muted-foreground mb-4">This action cannot be undone.</p>
+                <div className="flex gap-2">
+                  <CosmicButton variant="outline" className="flex-1" onClick={() => setShowDeleteModal(false)}>
+                    Cancel
+                  </CosmicButton>
+                  <CosmicButton
+                    className="flex-1"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowDeleteModal(false);
+                      onDelete?.();
+                    }}
+                  >
+                    Delete
+                  </CosmicButton>
+                </div>
               </GlassCard>
             </motion.div>
           </>

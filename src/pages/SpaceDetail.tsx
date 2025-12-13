@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Users, Star, Share2, Flag, X } from 'lucide-react';
+import { ArrowLeft, Users, Star, Flag, X, Trash } from 'lucide-react';
 import { Sidebar } from '@/components/Sidebar';
 import { MobileNav } from '@/components/MobileNav';
 import { PostCard } from '@/components/PostCard';
@@ -9,6 +9,7 @@ import { GlassCard } from '@/components/GlassCard';
 import { useSpace, useSpaces } from '@/hooks/useSpaces';
 import { usePosts } from '@/hooks/usePosts';
 import { useReports } from '@/hooks/useReports';
+import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
@@ -27,9 +28,10 @@ const SpaceDetail = () => {
   const [membersLoading, setMembersLoading] = useState(false);
   
   const { space, loading: spaceLoading } = useSpace(id || '');
-  const { joinSpace, leaveSpace } = useSpaces();
-  const { posts, loading: postsLoading, likePost, savePost } = usePosts({ spaceId: id });
+  const { joinSpace, leaveSpace, deleteSpace } = useSpaces();
+  const { posts, loading: postsLoading, likePost, savePost, deletePost } = usePosts({ spaceId: id });
   const { reportContent } = useReports();
+  const { user } = useAuth();
 
   const handleJoinLeave = async () => {
     if (!space) return;
@@ -170,6 +172,19 @@ const SpaceDetail = () => {
               <CosmicButton variant="glass" className="px-3" onClick={() => setShowReportModal(true)}>
                 <Flag className="w-5 h-5" />
               </CosmicButton>
+              {user?.id && space.creator_id === user.id && (
+                <CosmicButton
+                  variant="glass"
+                  className="px-3"
+                  onClick={async () => {
+                    const ok = confirm('Delete this space? This cannot be undone.');
+                    if (!ok) return;
+                    if (id) await deleteSpace(id);
+                  }}
+                >
+                  <Trash className="w-5 h-5" />
+                </CosmicButton>
+              )}
             </div>
           </div>
 
@@ -226,6 +241,7 @@ const SpaceDetail = () => {
                     spaceName={post.space?.name}
                     onLike={() => likePost(post.id)}
                     onSave={() => savePost(post.id)}
+                    onDelete={() => deletePost(post.id)}
                   />
                 ))
               )}

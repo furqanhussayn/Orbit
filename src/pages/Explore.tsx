@@ -25,7 +25,7 @@ const Explore = () => {
   const [loading, setLoading] = useState(false);
 
   const { spaces, loading: spacesLoading, joinSpace, leaveSpace } = useSpaces();
-  const { posts: trendingPosts, loading: trendingLoading, likePost, savePost } = usePosts({ feed: 'trending' });
+  const { posts: trendingPosts, loading: trendingLoading, likePost, savePost, deletePost } = usePosts({ feed: 'trending' });
 
   const formatTime = (dateString: string) => {
     return formatDistanceToNow(new Date(dateString), { addSuffix: false });
@@ -190,6 +190,7 @@ const Explore = () => {
                         spaceName={post.space?.name}
                         onLike={() => likePost(post.id)}
                         onSave={() => savePost(post.id)}
+                        onDelete={() => deletePost(post.id)}
                       />
                     ))}
                   </div>
@@ -227,6 +228,7 @@ const Explore = () => {
                     spaceName={post.space?.name}
                     onLike={() => likePost(post.id)}
                     onSave={() => savePost(post.id)}
+                    onDelete={() => deletePost(post.id)}
                   />
                 ))
               )}

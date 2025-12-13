@@ -146,12 +146,37 @@ export const useSpaces = () => {
     return true;
   };
 
+  const deleteSpace = async (spaceId: string) => {
+    if (!user) return false;
+    const { data: space } = await supabase
+      .from('spaces')
+      .select('creator_id')
+      .eq('id', spaceId)
+      .maybeSingle();
+    if (space && space.creator_id !== user.id) {
+      toast.error('Only the creator can delete this space');
+      return false;
+    }
+    const { error } = await supabase
+      .from('spaces')
+      .delete()
+      .eq('id', spaceId);
+    if (error) {
+      toast.error('Failed to delete space');
+      return false;
+    }
+    toast.success('Space deleted');
+    fetchSpaces();
+    return true;
+  };
+
   return {
     spaces,
     loading,
     createSpace,
     joinSpace,
     leaveSpace,
+    deleteSpace,
     refetch: fetchSpaces
   };
 };

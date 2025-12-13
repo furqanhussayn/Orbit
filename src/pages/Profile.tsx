@@ -42,7 +42,7 @@ const Profile = () => {
   const isOwnProfile = !userId || userId === user?.id;
   const targetUserId = isOwnProfile ? user?.id : userId || undefined;
   const profileToShow = isOwnProfile ? profile : viewingProfile;
-  const { posts, loading, likePost, savePost } = usePosts({ 
+  const { posts, loading, likePost, savePost, deletePost } = usePosts({ 
     authorId: isOwnProfile ? user?.id : userId 
   });
   const { isFollowing, toggleFollow, stats } = useFollows(isOwnProfile ? user?.id : userId);
@@ -300,7 +300,8 @@ const Profile = () => {
                       author={{
                         name: post.author?.username || profileToShow?.username || 'Unknown',
                         avatar: post.author?.avatar_url || profileToShow?.avatar_url || '/avatar.png',
-                        handle: post.author?.username || profileToShow?.username || 'unknown'
+                        handle: post.author?.username || profileToShow?.username || 'unknown',
+                        id: post.author_id
                       }}
                       spaceName={post.space?.name}
                       content={post.body || post.title}
@@ -317,6 +318,11 @@ const Profile = () => {
                       }}
                       onSave={async () => {
                         await savePost(post.id);
+                        if (activeTab === 'Likes') fetchLikedPosts();
+                        if (activeTab === 'Saved') fetchSavedPosts();
+                      }}
+                      onDelete={async () => {
+                        await deletePost(post.id);
                         if (activeTab === 'Likes') fetchLikedPosts();
                         if (activeTab === 'Saved') fetchSavedPosts();
                       }}
