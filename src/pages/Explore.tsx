@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { Sidebar } from '@/components/Sidebar';
 import { MobileNav } from '@/components/MobileNav';
 import { PostCard } from '@/components/PostCard';
@@ -11,7 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePosts } from '@/hooks/usePosts';
 import { useSpaces } from '@/hooks/useSpaces';
 import { supabase } from '@/integrations/supabase/client';
-import { Search } from 'lucide-react';
+import { Search, PlusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -26,6 +26,7 @@ const Explore = () => {
 
   const { spaces, loading: spacesLoading, joinSpace, leaveSpace } = useSpaces();
   const { posts: trendingPosts, loading: trendingLoading, likePost, savePost, deletePost } = usePosts({ feed: 'trending' });
+  const joinedSpaces = spaces.filter((s) => s.is_joined);
 
   const formatTime = (dateString: string) => {
     return formatDistanceToNow(new Date(dateString), { addSuffix: false });
@@ -236,6 +237,16 @@ const Explore = () => {
           )}
         </div>
       </motion.main>
+
+      {/* Floating Create Post (desktop) */}
+      {joinedSpaces.length > 0 && (
+        <Link to="/create" className="hidden lg:block fixed bottom-6 right-6 z-50">
+          <CosmicButton className="flex items-center justify-center gap-2">
+            <PlusCircle className="w-5 h-5" />
+            Create Post
+          </CosmicButton>
+        </Link>
+      )}
 
       <MobileNav />
     </div>

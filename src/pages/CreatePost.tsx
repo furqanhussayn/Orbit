@@ -19,6 +19,7 @@ const CreatePost = () => {
   const { profile, user } = useAuth();
   const { spaces, loading: spacesLoading } = useSpaces();
   const { createPost } = usePosts();
+  const joinedSpaces = spaces.filter((s) => s.is_joined);
 
   const handleSubmit = async () => {
     if (!content.trim()) {
@@ -71,7 +72,7 @@ const CreatePost = () => {
             <h1 className="text-xl font-bold gradient-cosmic-text">Create Post</h1>
             <CosmicButton
               onClick={handleSubmit}
-              disabled={!content.trim() || !selectedSpace || spacesLoading}
+              disabled={!content.trim() || !selectedSpace || spacesLoading || joinedSpaces.length === 0}
               className="disabled:opacity-50"
             >
               Post
@@ -91,19 +92,25 @@ const CreatePost = () => {
               />
               <div className="flex-1">
                 <p className="font-semibold">{profile?.username || 'User'}</p>
-                <select
-                  value={selectedSpace}
-                  onChange={(e) => setSelectedSpace(e.target.value)}
-                  className="w-full bg-muted/50 border border-border rounded-xl px-4 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 mt-2"
-                  disabled={spacesLoading}
-                >
-                  <option value="">Select a space (required)</option>
-                  {spaces.map((space) => (
-                    <option key={space.id} value={space.id}>
-                      {space.name}
-                    </option>
-                  ))}
-                </select>
+                {joinedSpaces.length === 0 ? (
+                  <div className="mt-2 px-4 py-2 rounded-xl bg-muted/50 border border-border text-muted-foreground">
+                    Join spaces to start posting
+                  </div>
+                ) : (
+                  <select
+                    value={selectedSpace}
+                    onChange={(e) => setSelectedSpace(e.target.value)}
+                    className="w-full bg-muted/50 border border-border rounded-xl px-4 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 mt-2"
+                    disabled={spacesLoading}
+                  >
+                    <option value="">Select a space (required)</option>
+                    {joinedSpaces.map((space) => (
+                      <option key={space.id} value={space.id}>
+                        {space.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
             </div>
 

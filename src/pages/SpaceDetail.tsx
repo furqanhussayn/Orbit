@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Users, Star, Flag, X, Trash } from 'lucide-react';
+import { ArrowLeft, Users, Star, Flag, X, Trash, PlusCircle } from 'lucide-react';
 import { Sidebar } from '@/components/Sidebar';
 import { MobileNav } from '@/components/MobileNav';
 import { PostCard } from '@/components/PostCard';
@@ -28,10 +28,11 @@ const SpaceDetail = () => {
   const [membersLoading, setMembersLoading] = useState(false);
   
   const { space, loading: spaceLoading } = useSpace(id || '');
-  const { joinSpace, leaveSpace, deleteSpace } = useSpaces();
+  const { spaces, joinSpace, leaveSpace, deleteSpace } = useSpaces();
   const { posts, loading: postsLoading, likePost, savePost, deletePost } = usePosts({ spaceId: id });
   const { reportContent } = useReports();
   const { user } = useAuth();
+  const joinedSpaces = spaces.filter((s) => s.is_joined);
 
   const handleJoinLeave = async () => {
     if (!space) return;
@@ -166,9 +167,11 @@ const SpaceDetail = () => {
               >
                 {space.is_joined ? 'Leave' : 'Join Space'}
               </CosmicButton>
-              <CosmicButton onClick={() => setIsCreateModalOpen(true)}>
-                Create Post
-              </CosmicButton>
+              {space.is_joined && (
+                <CosmicButton onClick={() => setIsCreateModalOpen(true)}>
+                  Create Post
+                </CosmicButton>
+              )}
               <CosmicButton variant="glass" className="px-3" onClick={() => setShowReportModal(true)}>
                 <Flag className="w-5 h-5" />
               </CosmicButton>
@@ -286,6 +289,16 @@ const SpaceDetail = () => {
           )}
         </div>
       </main>
+
+      {/* Floating Create Post (desktop) */}
+      {joinedSpaces.length > 0 && (
+        <Link to="/create" className="hidden lg:block fixed bottom-6 right-6 z-50">
+          <CosmicButton className="flex items-center justify-center gap-2">
+            <PlusCircle className="w-5 h-5" />
+            Create Post
+          </CosmicButton>
+        </Link>
+      )}
 
       <MobileNav />
 

@@ -37,6 +37,7 @@ const Signup = () => {
   const navigate = useNavigate();
   const { signUp, user } = useAuth();
   const { joinSpace } = useSpaces();
+  const toSlug = (s: string) => s.toLowerCase().replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-');
 
   // Redirect if already logged in
   if (user) {
@@ -94,38 +95,58 @@ const Signup = () => {
       return;
     }
 
+    await new Promise(resolve => setTimeout(resolve, 1000));
     const { data: authUser } = await supabase.auth.getUser();
-    const uid = authUser.user?.id;
+    let uid = authUser.user?.id;
+    if (!uid) {
+      const { data: session } = await supabase.auth.getSession();
+      uid = session.session?.user?.id || undefined;
+    }
     if (uid) {
-      await supabase.from('profiles').update({ age_group: formData.ageGroup }).eq('id', uid);
+      const deadline = Date.now() + 5000;
+      let updated = false;
+      while (!updated && Date.now() < deadline) {
+        const { data: profileRow } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', uid)
+          .maybeSingle();
+        if (profileRow?.id) {
+          const { error: ageUpdateError } = await supabase
+            .from('profiles')
+            .update({ age_group: formData.ageGroup as 'under18' | '18plus' })
+            .eq('id', uid);
+          if (!ageUpdateError) {
+            updated = true;
+          } else {
+            await new Promise(r => setTimeout(r, 500));
+          }
+        } else {
+          await new Promise(r => setTimeout(r, 500));
+        }
+      }
     }
 
-    const under18SlugMap: Record<string, string> = {
-      'Gaming': 'gaming',
-      'Music': 'music',
-      'Movies and TV Shows': 'movies-and-tv-shows',
-      'Books': 'books',
-      'Learn Programming': 'learn-programming',
-      'Art': 'arts',
-    };
-    const adultSlugMap: Record<string, string> = {
-      'Learn Programming': 'learn-programming',
-      'J*bs and Careers': 'jbs-and-careers',
-      'Deep dive in Dark Web': 'deep-dive-in-dark-web',
-      'Music': 'music',
-      'Relationship Advice': 'relationship-advices',
-      'Books': 'books',
-    };
-    const slugMap = formData.ageGroup === '18plus' ? adultSlugMap : under18SlugMap;
-    const selectedSlugs = interests.map((i) => slugMap[i]).filter(Boolean);
-    if (selectedSlugs.length > 0) {
-      const { data: spacesToJoin } = await supabase
+    if (interests.length > 0 && uid) {
+      const { data: allSpaces } = await supabase
         .from('spaces')
-        .select('id, slug, nsfw')
-        .in('slug', selectedSlugs);
-      for (const s of spacesToJoin || []) {
-        if (s.nsfw && formData.ageGroup !== '18plus') continue;
-        await joinSpace(s.id);
+        .select('id, name, slug, nsfw')
+        .limit(200);
+      const selectedSlugs = interests.map(toSlug);
+      const candidates = (allSpaces || []).filter((s) => {
+        const sSlug = s.slug || toSlug(s.name);
+        return (selectedSlugs.includes(sSlug) || selectedSlugs.includes(toSlug(s.name))) && !(s.nsfw && formData.ageGroup !== '18plus');
+      });
+      for (const s of candidates) {
+        const { error: joinErr } = await supabase
+          .from('space_members')
+          .insert({
+            space_id: s.id,
+            user_id: uid
+          });
+        if (joinErr && joinErr.code !== '23505') {
+          console.error('Failed to auto-join space:', joinErr);
+        }
       }
     }
 
@@ -134,7 +155,7 @@ const Signup = () => {
   };
 
   const under18Interests = ['Gaming', 'Music', 'Movies and TV Shows', 'Books', 'Learn Programming', 'Art'];
-  const adultInterests = ['Learn Programming', 'J*bs and Careers', 'Deep dive in Dark Web', 'Music', 'Relationship Advice', 'Books'];
+  const adultInterests = ['Learn Programming', 'Jobs and Careers', 'Dark Web', 'Music', 'Relationship Advice', 'Books'];
 
   const renderedInterests = formData.ageGroup === '18plus' ? adultInterests : under18Interests;
 

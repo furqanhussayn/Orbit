@@ -64,8 +64,8 @@ export const Sidebar = () => {
       {joinedSpaces.length > 0 && (
         <div className="mt-6">
           <h4 className="text-sm font-semibold text-muted-foreground mb-2">Joined Spaces</h4>
-          <div className="space-y-1">
-            {joinedSpaces.slice(0, 8).map((s) => (
+          <div className="space-y-1 overflow-y-auto max-h-64 pr-1 no-scrollbar pb-10">
+            {joinedSpaces.map((s) => (
               <Link key={s.id} to={`/space/${s.id}`}>
                 <div className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted/50 transition-colors">
                   <div className="w-5 h-5 rounded-md overflow-hidden bg-card border border-border/50">
@@ -75,17 +75,12 @@ export const Sidebar = () => {
                 </div>
               </Link>
             ))}
+            <div className="h-9" />
           </div>
         </div>
       )}
 
-      {/* Create Post Button */}
-      <Link to="/create">
-        <CosmicButton className="w-full flex items-center justify-center gap-2">
-          <PlusCircle className="w-5 h-5" />
-          Create Post
-        </CosmicButton>
-      </Link>
+      {/* Create Post CTA moved to page-level for global positioning */}
     </motion.aside>
   );
 };

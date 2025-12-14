@@ -7,8 +7,11 @@ import { PostCard } from '@/components/PostCard';
 import { CreatePostModal } from '@/components/CreatePostModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePosts } from '@/hooks/usePosts';
+import { useSpaces } from '@/hooks/useSpaces';
+import { CosmicButton } from '@/components/CosmicButton';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import { PlusCircle } from 'lucide-react';
 
 const tabs = ['For You', 'Trending'];
 
@@ -17,6 +20,8 @@ const HomeFeed = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const { profile } = useAuth();
   const navigate = useNavigate();
+  const { spaces } = useSpaces();
+  const joinedSpaces = spaces.filter((s) => s.is_joined);
   
   const feedType = activeTab === 'Trending' ? 'trending' : 'all';
   const { posts, loading, likePost, savePost, deletePost, refetch } = usePosts({ feed: feedType as any });
@@ -112,6 +117,16 @@ const HomeFeed = () => {
           )}
         </div>
       </main>
+
+      {/* Floating Create Post (desktop) */}
+      {joinedSpaces.length > 0 && (
+        <Link to="/create" className="hidden lg:block fixed bottom-6 right-6 z-50">
+          <CosmicButton className="flex items-center justify-center gap-2">
+            <PlusCircle className="w-5 h-5" />
+            Create Post
+          </CosmicButton>
+        </Link>
+      )}
 
       <MobileNav />
       <CreatePostModal 
