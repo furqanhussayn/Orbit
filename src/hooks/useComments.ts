@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -25,7 +25,7 @@ export const useComments = (postId: string) => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     if (!postId) return;
     
     setLoading(true);
@@ -48,7 +48,7 @@ export const useComments = (postId: string) => {
 
     // Get user's liked comments and like counts
     let likedCommentIds: string[] = [];
-    let commentLikeCounts: Record<string, number> = {};
+    const commentLikeCounts: Record<string, number> = {};
     
     if (user && data) {
       const commentIds = data.map(c => c.id);
@@ -118,11 +118,11 @@ export const useComments = (postId: string) => {
 
     setComments(rootComments);
     setLoading(false);
-  };
+  }, [postId, user]);
 
   useEffect(() => {
     fetchComments();
-  }, [postId, user]);
+  }, [fetchComments]);
 
   const createComment = async (body: string, parentCommentId?: string) => {
     if (!user) {

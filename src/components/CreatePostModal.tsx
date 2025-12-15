@@ -7,6 +7,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePosts } from '@/hooks/usePosts';
 import { useSpaces } from '@/hooks/useSpaces';
 import { toast } from 'sonner';
+import { uploadImage, validateImage } from '@/lib/imageUpload';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CreatePostModalProps {
   isOpen: boolean;
@@ -19,6 +21,9 @@ interface CreatePostModalProps {
 export const CreatePostModal = ({ isOpen, onClose, onSubmit, defaultSpaceId, hideSpaceSelector }: CreatePostModalProps) => {
   const [content, setContent] = useState('');
   const [selectedSpace, setSelectedSpace] = useState('');
+  const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const { profile, user } = useAuth();
   const { spaces, loading: spacesLoading } = useSpaces();
   const { createPost } = usePosts();
@@ -28,6 +33,9 @@ export const CreatePostModal = ({ isOpen, onClose, onSubmit, defaultSpaceId, hid
     if (!isOpen) {
       setContent('');
       setSelectedSpace('');
+      setFile(null);
+      if (preview && preview.startsWith('blob:')) URL.revokeObjectURL(preview);
+      setPreview(null);
     }
     if (isOpen && defaultSpaceId) {
       setSelectedSpace(defaultSpaceId);
@@ -57,9 +65,27 @@ export const CreatePostModal = ({ isOpen, onClose, onSubmit, defaultSpaceId, hid
     });
 
     if (result) {
+      if (file) {
+        const err = validateImage(file, 'post');
+        if (err) {
+          toast.error(err);
+        } else {
+          setUploading(true);
+          const { publicUrl, error } = await uploadImage('post', result.id, file);
+          if (error || !publicUrl) {
+            toast.error(error || 'Upload failed');
+          } else {
+            await supabase.from('posts').update({ media_url: publicUrl }).eq('id', result.id);
+          }
+          setUploading(false);
+        }
+      }
       toast.success('Post created!');
       setContent('');
       setSelectedSpace('');
+      setFile(null);
+      if (preview && preview.startsWith('blob:')) URL.revokeObjectURL(preview);
+      setPreview(null);
       onSubmit?.();
       onClose();
     }
@@ -151,19 +177,37 @@ export const CreatePostModal = ({ isOpen, onClose, onSubmit, defaultSpaceId, hid
               {/* Actions */}
               <div className="flex items-center justify-between mt-4 pt-4 border-t border-border/50">
                 <div className="flex items-center gap-2">
-                  <motion.button
-                    className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-primary transition-colors"
-                    whileTap={{ scale: 0.9 }}
+                  <button
+                    type="button"
+                    className="p-2 rounded-xl hover:bg-muted transition-colors"
+                    onClick={() => document.getElementById('post-image-input')?.click()}
+                    disabled={uploading}
+                    aria-label="Add image"
                   >
                     <Image className="w-5 h-5" />
-                  </motion.button>
+                  </button>
+                  <input
+                    id="post-image-input"
+                    type="file"
+                    accept="image/png,image/jpeg"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0] || null;
+                      setFile(f);
+                      setPreview(f ? URL.createObjectURL(f) : null);
+                    }}
+                    disabled={uploading}
+                  />
+                  {preview && (
+                    <img src={preview} alt="Preview" className="w-16 h-16 rounded-xl border border-border object-cover" />
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground">{content.length}/280</span>
                   <CosmicButton
                     onClick={handleSubmit}
-                    disabled={!content.trim() || !selectedSpace || spacesLoading}
+                    disabled={!content.trim() || !selectedSpace || spacesLoading || uploading}
                     className="disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Post

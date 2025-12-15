@@ -23,8 +23,8 @@ const HomeFeed = () => {
   const { spaces } = useSpaces();
   const joinedSpaces = spaces.filter((s) => s.is_joined);
   
-  const feedType = activeTab === 'Trending' ? 'trending' : 'all';
-  const { posts, loading, likePost, savePost, deletePost, refetch } = usePosts({ feed: feedType as any });
+  const feedType: 'trending' | 'all' = activeTab === 'Trending' ? 'trending' : 'all';
+  const { posts, loading, likePost, savePost, deletePost, refetch } = usePosts({ feed: feedType });
 
   const formatTime = (dateString: string) => {
     return formatDistanceToNow(new Date(dateString), { addSuffix: false });

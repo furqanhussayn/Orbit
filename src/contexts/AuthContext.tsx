@@ -59,13 +59,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const profileData = await fetchProfile(session.user.id);
             setProfile(profileData);
             
-            // Set default avatar (always update to ensure it's set)
-            if (profileData) {
+            if (profileData && !profileData.avatar_url) {
               const { error } = await supabase
                 .from('profiles')
                 .update({ avatar_url: '/avatar.png' })
                 .eq('id', session.user.id);
-              
               if (!error) {
                 setProfile(prev => prev ? { ...prev, avatar_url: '/avatar.png' } : null);
               }
@@ -85,13 +83,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const profileData = await fetchProfile(session.user.id);
         setProfile(profileData);
         
-        // Set default avatar (always update to ensure it's set)
-        if (profileData) {
+        if (profileData && !profileData.avatar_url) {
           const { error } = await supabase
             .from('profiles')
             .update({ avatar_url: '/avatar.png' })
             .eq('id', session.user.id);
-          
           if (!error) {
             setProfile(prev => prev ? { ...prev, avatar_url: '/avatar.png' } : null);
           }

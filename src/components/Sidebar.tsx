@@ -69,7 +69,7 @@ export const Sidebar = () => {
               <Link key={s.id} to={`/space/${s.id}`}>
                 <div className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted/50 transition-colors">
                   <div className="w-5 h-5 rounded-md overflow-hidden bg-card border border-border/50">
-                    <img src={s.icon_url || '/avatar.png'} alt={s.name} className="w-full h-full object-cover" />
+                    <img src={s.icon_url || 'https://images.unsplash.com/photo-1614732414444-096e5f1122d5?w=200'} alt={s.name} className="w-full h-full object-cover" />
                   </div>
                   <span className="text-sm">{s.name}</span>
                 </div>

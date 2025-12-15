@@ -1,16 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
-interface Post {
+export interface Post {
   id: string;
   space_id: string;
   author_id: string;
   title: string;
   body: string | null;
-  media_url: string | null;
-  is_hidden: boolean;
+  image_url?: string | null;
+  media_url?: string | null;
+  is_hidden: boolean | null;
   created_at: string;
   author?: {
     username: string | null;
@@ -31,7 +32,7 @@ export const usePosts = (options?: { spaceId?: string; authorId?: string; feed?:
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     setLoading(true);
     
     let query = supabase
@@ -64,11 +65,12 @@ export const usePosts = (options?: { spaceId?: string; authorId?: string; feed?:
     // Get user's liked and saved posts, and counts
     let likedPostIds: string[] = [];
     let savedPostIds: string[] = [];
-    let postLikeCounts: Record<string, number> = {};
-    let postCommentCounts: Record<string, number> = {};
+    const postLikeCounts: Record<string, number> = {};
+    const postCommentCounts: Record<string, number> = {};
     
-    if (data && data.length > 0) {
-      const postIds = data.map(p => p.id);
+    const rows: Post[] = Array.isArray(data) ? (data as Post[]) : [];
+    if (rows.length > 0) {
+      const postIds = rows.map((p) => p.id);
       
       // Get like counts
       const { data: likesData } = await supabase
@@ -77,7 +79,7 @@ export const usePosts = (options?: { spaceId?: string; authorId?: string; feed?:
         .in('post_id', postIds);
       
       if (likesData) {
-        likesData.forEach(like => {
+        likesData.forEach((like) => {
           postLikeCounts[like.post_id] = (postLikeCounts[like.post_id] || 0) + 1;
         });
       }
@@ -90,7 +92,7 @@ export const usePosts = (options?: { spaceId?: string; authorId?: string; feed?:
         .eq('is_hidden', false);
       
       if (commentsData) {
-        commentsData.forEach(comment => {
+        commentsData.forEach((comment) => {
           postCommentCounts[comment.post_id] = (postCommentCounts[comment.post_id] || 0) + 1;
         });
       }
@@ -107,13 +109,13 @@ export const usePosts = (options?: { spaceId?: string; authorId?: string; feed?:
       }
     }
 
-    const formattedPosts = data?.map(post => ({
+    const formattedPosts: Post[] = rows.map((post) => ({
       ...post,
       likes_count: postLikeCounts[post.id] || 0,
       comments_count: postCommentCounts[post.id] || 0,
       is_liked: likedPostIds.includes(post.id),
-      is_saved: savedPostIds.includes(post.id)
-    })) || [];
+      is_saved: savedPostIds.includes(post.id),
+    }));
 
     // Sort by likes for trending
     if (options?.feed === 'trending') {
@@ -122,11 +124,11 @@ export const usePosts = (options?: { spaceId?: string; authorId?: string; feed?:
 
     setPosts(formattedPosts);
     setLoading(false);
-  };
+  }, [user, options?.spaceId, options?.authorId, options?.feed]);
 
   useEffect(() => {
     fetchPosts();
-  }, [user, options?.spaceId, options?.authorId, options?.feed]);
+  }, [fetchPosts]);
 
   const createPost = async (data: {
     space_id: string;

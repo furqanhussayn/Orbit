@@ -11,10 +11,15 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePosts } from '@/hooks/usePosts';
 import { useSpaces } from '@/hooks/useSpaces';
 import { toast } from 'sonner';
+import { uploadImage, validateImage } from '@/lib/imageUpload';
+import { supabase } from '@/integrations/supabase/client';
 
 const CreatePost = () => {
   const [content, setContent] = useState('');
   const [selectedSpace, setSelectedSpace] = useState('');
+  const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const navigate = useNavigate();
   const { profile, user } = useAuth();
   const { spaces, loading: spacesLoading } = useSpaces();
@@ -44,6 +49,21 @@ const CreatePost = () => {
     });
 
     if (result) {
+      if (file) {
+        const err = validateImage(file, 'post');
+        if (err) {
+          toast.error(err);
+        } else {
+          setUploading(true);
+          const { publicUrl, error } = await uploadImage('post', result.id, file);
+          if (error || !publicUrl) {
+            toast.error(error || 'Upload failed');
+          } else {
+            await supabase.from('posts').update({ media_url: publicUrl }).eq('id', result.id);
+          }
+          setUploading(false);
+        }
+      }
       toast.success('Post created!');
       navigate('/home');
     }
@@ -72,7 +92,7 @@ const CreatePost = () => {
             <h1 className="text-xl font-bold gradient-cosmic-text">Create Post</h1>
             <CosmicButton
               onClick={handleSubmit}
-              disabled={!content.trim() || !selectedSpace || spacesLoading || joinedSpaces.length === 0}
+              disabled={!content.trim() || !selectedSpace || spacesLoading || joinedSpaces.length === 0 || uploading}
               className="disabled:opacity-50"
             >
               Post
@@ -126,12 +146,30 @@ const CreatePost = () => {
             <div className="border-t border-border/50 pt-4 mt-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <motion.button
-                    className="p-3 rounded-xl hover:bg-muted text-muted-foreground hover:text-primary transition-colors"
-                    whileTap={{ scale: 0.9 }}
+                  <button
+                    type="button"
+                    className="p-2 rounded-xl hover:bg-muted transition-colors"
+                    onClick={() => document.getElementById('post-image-input-page')?.click()}
+                    disabled={uploading}
+                    aria-label="Add image"
                   >
-                    <Image className="w-6 h-6" />
-                  </motion.button>
+                    <Image className="w-5 h-5" />
+                  </button>
+                  <input
+                    id="post-image-input-page"
+                    type="file"
+                    accept="image/png,image/jpeg"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0] || null;
+                      setFile(f);
+                      setPreview(f ? URL.createObjectURL(f) : null);
+                    }}
+                    disabled={uploading}
+                  />
+                  {preview && (
+                    <img src={preview} alt="Preview" className="w-16 h-16 rounded-xl border border-border object-cover" />
+                  )}
                 </div>
 
                 <div className="flex items-center gap-3">

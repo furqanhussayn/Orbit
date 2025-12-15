@@ -9,6 +9,7 @@ import { GlassCard } from '@/components/GlassCard';
 import { EditProfileModal } from '@/components/EditProfileModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePosts } from '@/hooks/usePosts';
+import type { Post } from '@/hooks/usePosts';
 import { useFollows } from '@/hooks/useFollows';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -33,8 +34,8 @@ const Profile = () => {
   const [viewingProfile, setViewingProfile] = useState<ProfileData | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
   const { user, profile, signOut } = useAuth();
-  const [likedPosts, setLikedPosts] = useState<any[]>([]);
-  const [savedPosts, setSavedPosts] = useState<any[]>([]);
+  const [likedPosts, setLikedPosts] = useState<Post[]>([]);
+  const [savedPosts, setSavedPosts] = useState<Post[]>([]);
   const [loadingLikes, setLoadingLikes] = useState(false);
   const [loadingSaved, setLoadingSaved] = useState(false);
   
@@ -121,7 +122,7 @@ const Profile = () => {
       comments_count: commentCounts[post.id] || 0,
       is_liked: likedIdsForUser.includes(post.id),
       is_saved: savedIdsForUser.includes(post.id)
-    }));
+    })) as Post[];
   };
 
   const fetchLikedPosts = async () => {
@@ -238,6 +239,7 @@ const Profile = () => {
               </div>
             )}
           </div>
+
 
           {loadingProfile ? (
             <div className="flex justify-center py-8">

@@ -107,7 +107,7 @@ export const PostCard = ({
           <img 
             src={image} 
             alt="Post content"
-            className="w-full h-64 object-cover"
+            className="w-full h-auto object-contain"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background/50 to-transparent" />
         </div>

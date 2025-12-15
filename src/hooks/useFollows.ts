@@ -143,7 +143,8 @@ export const useFollows = (targetUserId?: string) => {
 // Hook to get users to follow (suggestions)
 export const useFollowSuggestions = (limit: number = 10) => {
   const { user } = useAuth();
-  const [suggestions, setSuggestions] = useState<any[]>([]);
+  type ProfileSuggestion = { id: string; username: string | null; avatar_url: string | null; bio: string | null };
+  const [suggestions, setSuggestions] = useState<ProfileSuggestion[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

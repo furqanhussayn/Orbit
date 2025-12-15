@@ -15,6 +15,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 import { CreatePostModal } from '@/components/CreatePostModal';
 import { supabase } from '@/integrations/supabase/client';
+import { EditSpaceModal } from '@/components/EditSpaceModal';
 
 const tabs = ['Posts', 'About', 'Members'];
 
@@ -24,10 +25,12 @@ const SpaceDetail = () => {
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [members, setMembers] = useState<any[]>([]);
+  type ProfileLite = { id: string; username: string | null; avatar_url: string | null };
+  const [members, setMembers] = useState<ProfileLite[]>([]);
   const [membersLoading, setMembersLoading] = useState(false);
+  const [isEditSpaceOpen, setIsEditSpaceOpen] = useState(false);
   
-  const { space, loading: spaceLoading } = useSpace(id || '');
+  const { space, loading: spaceLoading, refetch: refetchSpace } = useSpace(id || '');
   const { spaces, joinSpace, leaveSpace, deleteSpace } = useSpaces();
   const { posts, loading: postsLoading, likePost, savePost, deletePost } = usePosts({ spaceId: id });
   const { reportContent } = useReports();
@@ -71,7 +74,7 @@ const SpaceDetail = () => {
       setMembersLoading(false);
       return;
     }
-    const userIds = (memberRows || []).map((r: any) => r.user_id);
+    const userIds = (memberRows || []).map((r: { user_id: string }) => r.user_id);
     if (userIds.length === 0) {
       setMembers([]);
       setMembersLoading(false);
@@ -81,7 +84,7 @@ const SpaceDetail = () => {
       .from('profiles')
       .select('id, username, avatar_url')
       .in('id', userIds);
-    setMembers((profiles || []).map((p) => ({ profile: p })));
+    setMembers((profiles || []) as ProfileLite[]);
     setMembersLoading(false);
   };
 
@@ -172,21 +175,28 @@ const SpaceDetail = () => {
                   Create Post
                 </CosmicButton>
               )}
-              <CosmicButton variant="glass" className="px-3" onClick={() => setShowReportModal(true)}>
-                <Flag className="w-5 h-5" />
-              </CosmicButton>
-              {user?.id && space.creator_id === user.id && (
-                <CosmicButton
-                  variant="glass"
-                  className="px-3"
-                  onClick={async () => {
-                    const ok = confirm('Delete this space? This cannot be undone.');
-                    if (!ok) return;
-                    if (id) await deleteSpace(id);
-                  }}
-                >
-                  <Trash className="w-5 h-5" />
+              {user?.id !== space.creator_id && (
+                <CosmicButton variant="glass" className="px-3" onClick={() => setShowReportModal(true)}>
+                  <Flag className="w-5 h-5" />
                 </CosmicButton>
+              )}
+              {user?.id && space.creator_id === user.id && (
+                <>
+                  <CosmicButton onClick={() => setIsEditSpaceOpen(true)}>
+                    Edit Space
+                  </CosmicButton>
+                  <CosmicButton
+                    variant="glass"
+                    className="px-3"
+                    onClick={async () => {
+                      const ok = confirm('Delete this space? This cannot be undone.');
+                      if (!ok) return;
+                      if (id) await deleteSpace(id);
+                    }}
+                  >
+                    <Trash className="w-5 h-5" />
+                  </CosmicButton>
+                </>
               )}
             </div>
           </div>
@@ -276,11 +286,11 @@ const SpaceDetail = () => {
                   {members.map((m) => (
                     <div key={m.id} className="flex items-center gap-3">
                       <img
-                        src={m.profile?.avatar_url || '/avatar.png'}
-                        alt={m.profile?.username || 'User'}
+                        src={m.avatar_url || '/avatar.png'}
+                        alt={m.username || 'User'}
                         className="w-8 h-8 rounded-full border border-border/50 object-cover"
                       />
-                      <span className="text-sm">{m.profile?.username || 'Unknown'}</span>
+                      <span className="text-sm">{m.username || 'Unknown'}</span>
                     </div>
                   ))}
                 </div>
@@ -326,6 +336,22 @@ const SpaceDetail = () => {
             </CosmicButton>
           </GlassCard>
         </div>
+      )}
+      {isEditSpaceOpen && space && (
+        <EditSpaceModal
+          isOpen={isEditSpaceOpen}
+          onClose={() => setIsEditSpaceOpen(false)}
+          space={{
+            id: space.id,
+            name: space.name,
+            description: space.description,
+            icon_url: space.icon_url,
+            creator_id: space.creator_id
+          }}
+          onUpdated={() => {
+            refetchSpace();
+          }}
+        />
       )}
       <CreatePostModal
         isOpen={isCreateModalOpen}

@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
-interface Space {
+export interface Space {
   id: string;
   name: string;
   slug: string;
@@ -52,10 +52,14 @@ export const useSpaces = () => {
       joinedSpaceIds = memberData?.map(m => m.space_id) || [];
     }
 
-    const formattedSpaces = spacesData?.map(space => ({
+    type SpaceRow = Space & {
+      space_members: Array<{ count: number }>;
+      posts: Array<{ count: number }>;
+    };
+    const formattedSpaces = (spacesData as SpaceRow[] | null)?.map((space) => ({
       ...space,
-      member_count: (space.space_members as any)?.[0]?.count || 0,
-      post_count: (space.posts as any)?.[0]?.count || 0,
+      member_count: space.space_members?.[0]?.count || 0,
+      post_count: space.posts?.[0]?.count || 0,
       is_joined: joinedSpaceIds.includes(space.id)
     })) || [];
 
@@ -186,54 +190,56 @@ export const useSpace = (id: string) => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
-  useEffect(() => {
-    const fetchSpace = async () => {
-      setLoading(true);
-      
-      const { data, error } = await supabase
-        .from('spaces')
-        .select(`
-          *,
-          space_members(count),
-          posts(count)
-        `)
-        .eq('id', id)
-        .maybeSingle();
+  const fetchSpace = async () => {
+    if (!id) return;
+    setLoading(true);
+    
+    const { data, error } = await supabase
+      .from('spaces')
+      .select(`
+        *,
+        space_members(count),
+        posts(count)
+      `)
+      .eq('id', id)
+      .maybeSingle();
 
-      if (error) {
-        console.error('Error fetching space:', error);
-        setLoading(false);
-        return;
-      }
-
-      let isJoined = false;
-      if (user && data) {
-        const { data: memberData } = await supabase
-          .from('space_members')
-          .select('id')
-          .eq('space_id', id)
-          .eq('user_id', user.id)
-          .maybeSingle();
-        
-        isJoined = !!memberData;
-      }
-
-      if (data) {
-        setSpace({
-          ...data,
-          member_count: (data.space_members as any)?.[0]?.count || 0,
-          post_count: (data.posts as any)?.[0]?.count || 0,
-          is_joined: isJoined
-        });
-      }
-      
+    if (error) {
+      console.error('Error fetching space:', error);
       setLoading(false);
-    };
+      return;
+    }
 
+    let isJoined = false;
+    if (user && data) {
+      const { data: memberData } = await supabase
+        .from('space_members')
+        .select('id')
+        .eq('space_id', id)
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      isJoined = !!memberData;
+    }
+
+    if (data) {
+      const row = data as (Space & { space_members: Array<{ count: number }>; posts: Array<{ count: number }> });
+      setSpace({
+        ...row,
+        member_count: row.space_members?.[0]?.count || 0,
+        post_count: row.posts?.[0]?.count || 0,
+        is_joined: isJoined
+      });
+    }
+    
+    setLoading(false);
+  };
+
+  useEffect(() => {
     if (id) {
       fetchSpace();
     }
   }, [id, user]);
 
-  return { space, loading };
+  return { space, loading, refetch: fetchSpace };
 };

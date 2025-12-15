@@ -10,6 +10,8 @@ import { CosmicButton } from '@/components/CosmicButton';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePosts } from '@/hooks/usePosts';
 import { useSpaces } from '@/hooks/useSpaces';
+import type { Post } from '@/hooks/usePosts';
+import type { Space } from '@/hooks/useSpaces';
 import { supabase } from '@/integrations/supabase/client';
 import { Search, PlusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -20,8 +22,8 @@ const Explore = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialQ = searchParams.get('q') || '';
   const [query, setQuery] = useState(initialQ);
-  const [spaceResults, setSpaceResults] = useState<any[]>([]);
-  const [postResults, setPostResults] = useState<any[]>([]);
+  const [spaceResults, setSpaceResults] = useState<Space[]>([]);
+  const [postResults, setPostResults] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
 
   const { spaces, loading: spacesLoading, joinSpace, leaveSpace } = useSpaces();
@@ -59,33 +61,35 @@ const Explore = () => {
         .limit(50),
     ]);
 
-    const spacesData = spacesQry.data || [];
-    const postData = postsQry.data || [];
+    const spacesData: Space[] = Array.isArray(spacesQry.data) ? (spacesQry.data as Space[]) : [];
+    const postRows: Post[] = Array.isArray(postsQry.data) ? (postsQry.data as Post[]) : [];
 
-    const ids = postData.map((p: any) => p.id);
-    let likeCounts: Record<string, number> = {};
-    let commentCounts: Record<string, number> = {};
+    const ids = postRows.map((p: Post) => p.id);
+    const likeCounts: Record<string, number> = {};
+    const commentCounts: Record<string, number> = {};
     let likedIdsForUser: string[] = [];
     let savedIdsForUser: string[] = [];
 
     if (ids.length > 0) {
+      type LikeRow = { post_id: string };
+      type CommentRow = { post_id: string };
       const [{ data: likesData }, { data: commentsData }] = await Promise.all([
         supabase.from('post_likes').select('post_id').in('post_id', ids),
         supabase.from('comments').select('post_id').in('post_id', ids).eq('is_hidden', false),
       ]);
-      likesData?.forEach((l: any) => { likeCounts[l.post_id] = (likeCounts[l.post_id] || 0) + 1; });
-      commentsData?.forEach((c: any) => { commentCounts[c.post_id] = (commentCounts[c.post_id] || 0) + 1; });
+      (likesData as LikeRow[] | null)?.forEach((l) => { likeCounts[l.post_id] = (likeCounts[l.post_id] || 0) + 1; });
+      (commentsData as CommentRow[] | null)?.forEach((c) => { commentCounts[c.post_id] = (commentCounts[c.post_id] || 0) + 1; });
       if (user) {
         const [userLikes, userSaved] = await Promise.all([
           supabase.from('post_likes').select('post_id').eq('user_id', user.id).in('post_id', ids),
           supabase.from('saved_posts').select('post_id').eq('user_id', user.id).in('post_id', ids),
         ]);
-        likedIdsForUser = userLikes.data?.map((d: any) => d.post_id) || [];
-        savedIdsForUser = userSaved.data?.map((d: any) => d.post_id) || [];
+        likedIdsForUser = (userLikes.data as LikeRow[] | null)?.map((d) => d.post_id) || [];
+        savedIdsForUser = (userSaved.data as LikeRow[] | null)?.map((d) => d.post_id) || [];
       }
     }
 
-    const formattedPosts = postData.map((post: any) => ({
+    const formattedPosts: Post[] = postRows.map((post: Post) => ({
       ...post,
       likes_count: likeCounts[post.id] || 0,
       comments_count: commentCounts[post.id] || 0,

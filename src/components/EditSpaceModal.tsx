@@ -3,59 +3,74 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Edit2 } from 'lucide-react';
 import { GlassCard } from './GlassCard';
 import { CosmicButton } from './CosmicButton';
-import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { validateImage, uploadImage } from '@/lib/imageUpload';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
-interface EditProfileModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+interface SpaceData {
+  id: string;
+  name: string;
+  description: string | null;
+  icon_url: string | null;
+  creator_id: string | null;
 }
 
-export const EditProfileModal = ({ isOpen, onClose }: EditProfileModalProps) => {
-  const { profile, updateProfile, user } = useAuth();
-  const [username, setUsername] = useState('');
-  const [bio, setBio] = useState('');
-  const [avatarUrl, setAvatarUrl] = useState('');
+interface EditSpaceModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  space: SpaceData;
+  onUpdated?: () => void;
+}
+
+export const EditSpaceModal = ({ isOpen, onClose, space, onUpdated }: EditSpaceModalProps) => {
+  const { user } = useAuth();
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [iconUrl, setIconUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [fileInputKey, setFileInputKey] = useState(0);
 
   useEffect(() => {
-    if (profile && isOpen) {
-      setUsername(profile.username || '');
-      setBio(profile.bio || '');
-      setAvatarUrl(profile.avatar_url || '');
+    if (space && isOpen) {
+      setName(space.name || '');
+      setDescription(space.description || '');
+      setIconUrl(space.icon_url || '');
     }
-  }, [profile, isOpen]);
+  }, [space, isOpen]);
 
-  const handleAvatarSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleIconSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const err = validateImage(file, 'avatar');
+    const err = validateImage(file, 'spaceIcon');
     if (err) {
       toast.error(err);
       setFileInputKey(k => k + 1);
       return;
     }
-    if (!user) {
-      toast.error('You must be logged in');
+    if (!user || user.id !== space.creator_id) {
+      toast.error('Only the space author can change the icon');
       return;
     }
     setUploading(true);
-    const { publicUrl, error } = await uploadImage('avatar', user.id, file);
+    const { publicUrl, error } = await uploadImage('spaceIcon', space.id, file);
     if (error || !publicUrl) {
       toast.error(error || 'Upload failed');
       setUploading(false);
       setFileInputKey(k => k + 1);
       return;
     }
-    const { error: updateErr } = await updateProfile({ avatar_url: publicUrl });
+    const { error: updateErr } = await supabase
+      .from('spaces')
+      .update({ icon_url: publicUrl })
+      .eq('id', space.id);
     if (updateErr) {
-      toast.error('Failed to save avatar');
+      toast.error('Failed to save space icon');
     } else {
-      setAvatarUrl(publicUrl);
-      toast.success('Avatar updated');
+      setIconUrl(publicUrl);
+      toast.success('Space icon updated');
+      onUpdated?.();
     }
     setUploading(false);
     setFileInputKey(k => k + 1);
@@ -63,38 +78,37 @@ export const EditProfileModal = ({ isOpen, onClose }: EditProfileModalProps) => 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!username.trim()) {
-      toast.error('Username is required');
+
+    if (!name.trim()) {
+      toast.error('Space name is required');
       return;
     }
 
-    if (username.length < 3) {
-      toast.error('Username must be at least 3 characters');
-      return;
-    }
-
-    if (username.length > 20) {
-      toast.error('Username must be less than 20 characters');
+    if (!user || user.id !== space.creator_id) {
+      toast.error('Only the space author can edit this space');
       return;
     }
 
     setLoading(true);
-    
-    const { error } = await updateProfile({
-      username: username.trim(),
-      bio: bio.trim() || null,
-      avatar_url: avatarUrl.trim() || '/avatar.png',
-    });
+
+    const { error } = await supabase
+      .from('spaces')
+      .update({
+        name: name.trim(),
+        description: description.trim() || null,
+        icon_url: iconUrl.trim() || null,
+      })
+      .eq('id', space.id);
 
     setLoading(false);
 
     if (error) {
-      toast.error('Failed to update profile: ' + (error.message || 'Unknown error'));
+      toast.error('Failed to update space: ' + (error.message || 'Unknown error'));
       return;
     }
 
-    toast.success('Profile updated successfully!');
+    toast.success('Space updated successfully!');
+    onUpdated?.();
     onClose();
   };
 
@@ -102,7 +116,6 @@ export const EditProfileModal = ({ isOpen, onClose }: EditProfileModalProps) => 
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             className="fixed inset-0 bg-background/80 backdrop-blur-md z-50"
             initial={{ opacity: 0 }}
@@ -111,7 +124,6 @@ export const EditProfileModal = ({ isOpen, onClose }: EditProfileModalProps) => 
             onClick={onClose}
           />
 
-          {/* Modal */}
           <motion.div
             className="fixed inset-0 flex items-center justify-center z-50 p-4"
             initial={{ opacity: 0 }}
@@ -127,9 +139,8 @@ export const EditProfileModal = ({ isOpen, onClose }: EditProfileModalProps) => 
               hover={false}
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Header */}
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold gradient-cosmic-text">Edit Profile</h2>
+                <h2 className="text-xl font-bold gradient-cosmic-text">Edit Space</h2>
                 <motion.button
                   className="p-2 rounded-full hover:bg-muted transition-colors"
                   onClick={onClose}
@@ -140,79 +151,71 @@ export const EditProfileModal = ({ isOpen, onClose }: EditProfileModalProps) => 
                 </motion.button>
               </div>
 
-              {/* Form */}
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="flex items-center gap-4">
-                  <div className="relative group w-20 h-20 rounded-full overflow-hidden border-2 border-primary/30">
+                  <div className="relative group w-20 h-20 rounded-2xl overflow-hidden border-2 border-primary/30">
                     <img
-                      src={avatarUrl || '/avatar.png'}
-                      alt="Avatar"
+                      src={iconUrl || 'https://images.unsplash.com/photo-1614732414444-096e5f1122d5?w=200'}
+                      alt="Space icon"
                       className="w-full h-full object-cover"
-                      onError={(e) => { e.currentTarget.src = '/avatar.png'; }}
+                      onError={(e) => { e.currentTarget.src = 'https://images.unsplash.com/photo-1614732414444-096e5f1122d5?w=200'; }}
                     />
                     <button
                       type="button"
                       className="absolute inset-0 flex items-center justify-center bg-background/40 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => document.getElementById('avatar-file-input')?.click()}
+                      onClick={() => document.getElementById('space-icon-file-input')?.click()}
                       disabled={uploading}
                     >
                       <Edit2 className="w-6 h-6" />
                     </button>
                   </div>
                   <input
-                    id="avatar-file-input"
+                    id="space-icon-file-input"
                     key={fileInputKey}
                     type="file"
                     accept="image/png,image/jpeg"
                     className="hidden"
-                    onChange={handleAvatarSelect}
+                    onChange={handleIconSelect}
                     disabled={uploading}
                   />
                 </div>
-                {/* Avatar URL */}
-                <div className="hidden">
-                  <input type="text" value={avatarUrl} readOnly />
-                </div>
 
-                {/* Username */}
                 <div>
                   <label className="block text-sm font-medium mb-2 text-foreground">
-                    Username <span className="text-destructive">*</span>
+                    Space Name <span className="text-destructive">*</span>
                   </label>
                   <input
                     type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Enter username"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Enter space name"
                     required
                     minLength={3}
-                    maxLength={20}
+                    maxLength={60}
                     className="w-full bg-muted/50 border border-border rounded-xl px-4 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    {username.length}/20 characters
+                    {name.length}/60 characters
                   </p>
                 </div>
 
-                {/* Bio */}
                 <div>
                   <label className="block text-sm font-medium mb-2 text-foreground">
-                    Bio
+                    Description
                   </label>
                   <textarea
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    placeholder="Tell us about yourself..."
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Describe this space..."
                     rows={4}
-                    maxLength={160}
+                    maxLength={300}
                     className="w-full bg-muted/50 border border-border rounded-xl px-4 py-2 text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    {bio.length}/160 characters
+                    {description.length}/300 characters
                   </p>
                 </div>
 
-                {/* Actions */}
                 <div className="flex items-center justify-end gap-3 pt-4 border-t border-border/50">
                   <CosmicButton
                     type="button"
@@ -224,7 +227,7 @@ export const EditProfileModal = ({ isOpen, onClose }: EditProfileModalProps) => 
                   </CosmicButton>
                   <CosmicButton
                     type="submit"
-                    disabled={loading || !username.trim()}
+                    disabled={loading || !name.trim()}
                     className="disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? 'Saving...' : 'Save Changes'}
@@ -239,5 +242,4 @@ export const EditProfileModal = ({ isOpen, onClose }: EditProfileModalProps) => 
   );
 };
 
-export default EditProfileModal;
-
+export default EditSpaceModal;
